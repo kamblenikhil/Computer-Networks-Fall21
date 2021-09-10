@@ -1,3 +1,5 @@
 'body.txt' - this file contains Email Body
+
 'netcat.py' - this file contains the netcat class socket code
+
 'email.py' - this file contains the assignmetn code (task 2)
