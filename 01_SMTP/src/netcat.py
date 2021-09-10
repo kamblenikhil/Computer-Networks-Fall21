@@ -10,7 +10,7 @@ class Netcat(object):
             addr = socket.getaddrinfo(host, port, proto=socket.IPPROTO_TCP)[0][4]
         except IndexError:
             raise UsageError("Unknown hostname or IP")
-        
+
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.socket.connect(addr)
 
