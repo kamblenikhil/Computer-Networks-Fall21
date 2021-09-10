@@ -1,3 +1,11 @@
+TASK 1 - 
+
+'assignment-01.pdf' - this file contains Task 1 (with terminal code and screenshots)
+
+------------------------------------------------------------------------------------------
+
+TASK 2 - 
+
 'body.txt' - this file contains Email Body
 
 'netcat.py' - this file contains the netcat class socket code
