@@ -1,0 +1,368 @@
+Name - Nikhil Kamble
+Username - nkamble
+
+=========================================================================
+
+1. How can DNS be used to load balance services? Give a concrete explanation for google.com
+[Answer] - DNS serves as the phone-book for the Internet - it basically maps domain names like "google.com" which are equivalent to the personal names in the phone-book, to the Internet Protocol (IP) addresses like "142.250.190.46", which are equivalent to the phone numbers. DNS Load Balancing is a technique used to help distribute the request for a domain accross different machines so that no single machine is bearing the entire load. This will also improve the website performance as the traffic load can be shared with many server machine than a single one.
+For example, I have a domain name xyz.com and I have a 'server A' which takes x amount of capacity and another 'server B' with 2x amount of capacity to handle the DNS Traffic. In this case, the load balancer would give twice the amount of traffic to server B in comparison to server A. It would do this by returning the servers IP address in response to DNS queries. 
+
+The following is an example of 'lbd command' on Kali Linux (Load Balancer Detection) which detects a given domain by using DNS and/or HTTP load balancing via server and date:header 
+
+-------------------[Example 1 for www.google.com']-----------------------
+
+root@kali:~# lbd www.google.com
+
+lbd - load balancing detector 0.4 - Checks if a given domain uses load-balancing.
+Written by Stefan Behte (http://ge.mine.nu)
+Proof-of-concept! Might give false positives.
+
+Checking for DNS-Loadbalancing: NOT FOUND
+Checking for HTTP-Loadbalancing [Server]:
+gws
+NOT FOUND
+
+Checking for HTTP-Loadbalancing [Date]: 21:09:38, 21:09:38, 21:09:38, 21:09:38, 21:09:38, 21:09:39, 21:09:39, 21:09:39, 21:09:39, 21:09:39, 21:09:39, 21:09:39, 21:09:41, 21:09:41, 21:09:41, 21:09:41, 21:09:41, 21:09:41, 21:09:41, 21:09:41, 21:09:42, 21:09:42, 21:09:42, 21:09:42, 21:09:42, 21:09:42, 21:09:43, 21:09:43, 21:09:43, 21:09:43, 21:09:44, 21:09:44, 21:09:44, 21:09:45, 21:09:45, 21:09:45, 21:09:45, 21:09:45, 21:09:46, 21:09:46, 21:09:46, 21:09:46, 21:09:46, 21:09:47, 21:09:47, 21:09:47, 21:09:47, 21:09:47, 21:09:47, 21:09:47, NOT FOUND
+
+Checking for HTTP-Loadbalancing [Diff]: FOUND
+< Expires: Fri, 17 Sep 2021 21:09:47 GMT
+> Expires: Fri, 17 Sep 2021 21:09:48 GMT
+
+www.google.com does Load-balancing. Found via Methods: HTTP[Diff]
+
+-------------------Example 2 for www.yahoo.com']--------------------------
+
+root@kali:~# lbd yahoo.com
+
+lbd - load balancing detector 0.4 - Checks if a given domain uses load-balancing.
+Written by Stefan Behte (http://ge.mine.nu)
+Proof-of-concept! Might give false positives.
+
+Checking for DNS-Loadbalancing: FOUND
+yahoo.com has address 98.137.11.163
+yahoo.com has address 98.137.11.164
+yahoo.com has address 74.6.143.25
+yahoo.com has address 74.6.231.21
+yahoo.com has address 74.6.143.26
+yahoo.com has address 74.6.231.20
+
+Checking for HTTP-Loadbalancing [Server]:
+ATS
+NOT FOUND
+
+Checking for HTTP-Loadbalancing [Date]: 22:00:11, 22:00:12, 22:00:12, 22:00:12, 22:00:12, 22:00:13, 22:00:13, 22:00:13, 22:00:13, 22:00:14, 22:00:14, 22:00:14, 22:00:15, 22:00:15, 22:00:15, 22:00:16, 22:00:16, 22:00:16, 22:00:17, 22:00:17, 22:00:17, 22:00:17, 22:00:18, 22:00:18, 22:00:18, 22:00:18, 22:00:19, 22:00:19, 22:00:19, 22:00:19, 22:00:20, 22:00:20, 22:00:20, 22:00:21, 22:00:21, 22:00:21, 22:00:22, 22:00:22, 22:00:22, 22:00:22, 22:00:23, 22:00:23, 22:00:23, 22:00:23, 22:00:24, 22:00:24, 22:00:24, 22:00:24, 22:00:25, 22:00:25, NOT FOUND
+
+Checking for HTTP-Loadbalancing [Diff]: NOT FOUND
+
+yahoo.com does Load-balancing. Found via Methods: DNS
+
+
+=================================================================================
+
+2. DNS has been around since 1985 and the core protocol is still being used today. What is the inherent weakness of DNS (as of RFC1035; excluding DNSSEC)? Give an example of how an attacker might utilize it.
+Answer - DNS attack acts as a bad actor which when tries to compromise a network's DNS or can also take advantage of it's inherent attributes to conduct a larger attack. In the past we have seen multiple attacks like - 
+--> DOS (Denial-of-Service) ATTACK - It uses one machine and a internet connection to flood remote server. These attacks can be resolved using TTL or limiting an individual client requests.
+--> DDOS (Distributed DOS) ATTACK - It uses multiple machines and a internet connection to target a website.
+--> DNS Poisoning and Cache Poisoning [Man-in-the-Middle Attacks]- They use security gaps in the DNS Protocol to redirect the network traffic to malicious webpages. The Malicious actor can attack the DNS Server and inject some fake DNS Entry to redirect some common websites to a spoofing page which might look similar to the end user. For example, If the system is compromised and the attacker has injected a fake entry for 'amazon.com' to 'amazon-com.com'. The user might not recognize the spoofed webpage and use it as a regular amazon page and give out his account details and card details to the attacker in no time.
+
+How to avoid DNS Attack:
++Knowing the entire DNS Architecture
++Logging DNS Queries and Response Data
++Secure your recursive DNS Servers
++Limit you Admin Access to your DNS with multi factor authentication
+
+=================================================================================
+
+
+3. Perform a manual iterative DNS query for mail-relay.iu.edu with dig starting from the root servers. List all commands and their outputs and explain why you issued every command. Do not use tracing features (dig +trace) for your final write-down.
+Answer - 
+
+[dig domain.edu . NS] this command listed all root servers - 
+
+nkamble@sanjayashree:~/Documents/Net-Fall21/02_DNS$ dig mail-relay.iu.edu . NS
+
+; <<>> DiG 9.16.1-Ubuntu <<>> mail-relay.iu.edu . NS
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 16401
+;; flags: qr rd ra; QUERY: 1, ANSWER: 2, AUTHORITY: 0, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 65494
+;; QUESTION SECTION:
+;mail-relay.iu.edu.		IN	A
+
+;; ANSWER SECTION:
+mail-relay.iu.edu.	90	IN	A	134.68.220.21
+mail-relay.iu.edu.	90	IN	A	129.79.1.63
+
+;; Query time: 0 msec
+;; SERVER: 127.0.0.53#53(127.0.0.53)
+;; WHEN: Fri Sep 17 22:48:24 EDT 2021
+;; MSG SIZE  rcvd: 78
+
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 39198
+;; flags: qr rd ra; QUERY: 1, ANSWER: 13, AUTHORITY: 0, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 65494
+;; QUESTION SECTION:
+;.				IN	NS
+
+;; ANSWER SECTION:
+.			6896	IN	NS	f.root-servers.net.
+.			6896	IN	NS	c.root-servers.net.
+.			6896	IN	NS	k.root-servers.net.
+.			6896	IN	NS	g.root-servers.net.
+.			6896	IN	NS	j.root-servers.net.
+.			6896	IN	NS	b.root-servers.net.
+.			6896	IN	NS	d.root-servers.net.
+.			6896	IN	NS	i.root-servers.net.
+.			6896	IN	NS	l.root-servers.net.
+.			6896	IN	NS	m.root-servers.net.
+.			6896	IN	NS	e.root-servers.net.
+.			6896	IN	NS	h.root-servers.net.
+.			6896	IN	NS	a.root-servers.net.
+
+;; Query time: 0 msec
+;; SERVER: 127.0.0.53#53(127.0.0.53)
+;; WHEN: Fri Sep 17 22:48:24 EDT 2021
+;; MSG SIZE  rcvd: 239
+
+---------------------------------------------------------------------------------
+
+[dig @root-server domain.edu] this command listed all edu server - 
+
+
+nkamble@sanjayashree:~/Documents/Net-Fall21/02_DNS$ dig @a.root-servers.net mail-relay.iu.edu
+
+; <<>> DiG 9.16.1-Ubuntu <<>> @a.root-servers.net mail-relay.iu.edu
+; (2 servers found)
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 1230
+;; flags: qr rd; QUERY: 1, ANSWER: 0, AUTHORITY: 13, ADDITIONAL: 27
+;; WARNING: recursion requested but not available
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 4096
+;; QUESTION SECTION:
+;mail-relay.iu.edu.		IN	A
+
+;; AUTHORITY SECTION:
+edu.			172800	IN	NS	b.edu-servers.net.
+edu.			172800	IN	NS	f.edu-servers.net.
+edu.			172800	IN	NS	i.edu-servers.net.
+edu.			172800	IN	NS	a.edu-servers.net.
+edu.			172800	IN	NS	g.edu-servers.net.
+edu.			172800	IN	NS	j.edu-servers.net.
+edu.			172800	IN	NS	k.edu-servers.net.
+edu.			172800	IN	NS	m.edu-servers.net.
+edu.			172800	IN	NS	l.edu-servers.net.
+edu.			172800	IN	NS	h.edu-servers.net.
+edu.			172800	IN	NS	c.edu-servers.net.
+edu.			172800	IN	NS	e.edu-servers.net.
+edu.			172800	IN	NS	d.edu-servers.net.
+
+;; ADDITIONAL SECTION:
+b.edu-servers.net.	172800	IN	A	192.33.14.30
+b.edu-servers.net.	172800	IN	AAAA	2001:503:231d::2:30
+f.edu-servers.net.	172800	IN	A	192.35.51.30
+f.edu-servers.net.	172800	IN	AAAA	2001:503:d414::30
+i.edu-servers.net.	172800	IN	A	192.43.172.30
+i.edu-servers.net.	172800	IN	AAAA	2001:503:39c1::30
+a.edu-servers.net.	172800	IN	A	192.5.6.30
+a.edu-servers.net.	172800	IN	AAAA	2001:503:a83e::2:30
+g.edu-servers.net.	172800	IN	A	192.42.93.30
+g.edu-servers.net.	172800	IN	AAAA	2001:503:eea3::30
+j.edu-servers.net.	172800	IN	A	192.48.79.30
+j.edu-servers.net.	172800	IN	AAAA	2001:502:7094::30
+k.edu-servers.net.	172800	IN	A	192.52.178.30
+k.edu-servers.net.	172800	IN	AAAA	2001:503:d2d::30
+m.edu-servers.net.	172800	IN	A	192.55.83.30
+m.edu-servers.net.	172800	IN	AAAA	2001:501:b1f9::30
+l.edu-servers.net.	172800	IN	A	192.41.162.30
+l.edu-servers.net.	172800	IN	AAAA	2001:500:d937::30
+h.edu-servers.net.	172800	IN	A	192.54.112.30
+h.edu-servers.net.	172800	IN	AAAA	2001:502:8cc::30
+c.edu-servers.net.	172800	IN	A	192.26.92.30
+c.edu-servers.net.	172800	IN	AAAA	2001:503:83eb::30
+e.edu-servers.net.	172800	IN	A	192.12.94.30
+e.edu-servers.net.	172800	IN	AAAA	2001:502:1ca1::30
+d.edu-servers.net.	172800	IN	A	192.31.80.30
+d.edu-servers.net.	172800	IN	AAAA	2001:500:856e::30
+
+;; Query time: 28 msec
+;; SERVER: 2001:503:ba3e::2:30#53(2001:503:ba3e::2:30)
+;; WHEN: Fri Sep 17 22:53:51 EDT 2021
+;; MSG SIZE  rcvd: 841
+
+---------------------------------------------------------------------------------
+
+[dig @edu domain.edu NS] this command listed all IU Name Server - 
+
+kamble@sanjayashree:~/Documents/Net-Fall21/02_DNS$ dig @d.edu-servers.net. mail-relay.iu.edu NS
+
+; <<>> DiG 9.16.1-Ubuntu <<>> @d.edu-servers.net. mail-relay.iu.edu NS
+; (2 servers found)
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 33695
+;; flags: qr rd; QUERY: 1, ANSWER: 0, AUTHORITY: 3, ADDITIONAL: 6
+;; WARNING: recursion requested but not available
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 4096
+;; QUESTION SECTION:
+;mail-relay.iu.edu.		IN	NS
+
+;; AUTHORITY SECTION:
+iu.edu.			172800	IN	NS	dns1.iu.edu.
+iu.edu.			172800	IN	NS	dns2.iu.edu.
+iu.edu.			172800	IN	NS	dns3.iu.edu.
+
+;; ADDITIONAL SECTION:
+dns1.iu.edu.		172800	IN	A	134.68.220.8
+dns1.iu.edu.		172800	IN	AAAA	2001:18e8:3:220::10
+dns2.iu.edu.		172800	IN	A	129.79.1.8
+dns2.iu.edu.		172800	IN	AAAA	2001:18e8:2:8::10
+dns3.iu.edu.		172800	IN	A	52.23.85.80
+
+;; Query time: 44 msec
+;; SERVER: 2001:500:856e::30#53(2001:500:856e::30)
+;; WHEN: Fri Sep 17 22:56:56 EDT 2021
+;; MSG SIZE  rcvd: 207
+
+--------------------------------------------------------------------------------
+
+[dig dns2.iu.edu. domain.edu] this command listed IP Address of the domain name- 
+
+nkamble@sanjayashree:~/Documents/Net-Fall21/02_DNS$ dig dns2.iu.edu. mail-relay.iu.edu
+
+; <<>> DiG 9.16.1-Ubuntu <<>> dns2.iu.edu. mail-relay.iu.edu
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 56114
+;; flags: qr rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 65494
+;; QUESTION SECTION:
+;dns2.iu.edu.			IN	A
+
+;; ANSWER SECTION:
+dns2.iu.edu.		2441	IN	A	129.79.1.8
+
+;; Query time: 4 msec
+;; SERVER: 127.0.0.53#53(127.0.0.53)
+;; WHEN: Fri Sep 17 22:59:25 EDT 2021
+;; MSG SIZE  rcvd: 56
+
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 13207
+;; flags: qr rd ra; QUERY: 1, ANSWER: 2, AUTHORITY: 0, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 65494
+;; QUESTION SECTION:
+;mail-relay.iu.edu.		IN	A
+
+;; ANSWER SECTION:
+mail-relay.iu.edu.	300	IN	A	134.68.220.21
+mail-relay.iu.edu.	300	IN	A	129.79.1.63
+
+;; Query time: 52 msec
+;; SERVER: 127.0.0.53#53(127.0.0.53)
+;; WHEN: Fri Sep 17 22:59:25 EDT 2021
+;; MSG SIZE  rcvd: 78
+
+---------------------------------------------------------------------------------
+
+To verify the IP Address we got, we use nslookup
+
+nkamble@sanjayashree:~/Documents/Net-Fall21/02_DNS$ nslookup 129.79.1.63
+63.1.79.129.in-addr.arpa	name = mail-relay.iu.edu.
+
+Authoritative answers can be found from:
+
+=================================================================================
+
+4. You are sitting in a coffee shop and are connected to a public WLAN. You fire up wireshark and start sniffing the traffic of other customers. You notice that all of their traffic is over https so you cannot simply read it. You also notice something striking about the DNS traffic, what is it and what are the implications?
+Answer - After looking in the Wireshark and applying DNS Filter in the Public Wifi Network I can see some random search engine messages in the DNS Query Data. For example: "Cinderella" Google Search looks something like cinderella.hsd1.xyzxyz which simply means public wifi aren't safe and vulnerable to serious attacks and the traffic could be used by an attacker to manipulate multiple levels of attacks depending on the situation.
+
+=================================================================================
+
+5. Suppose that IU has an internal DNS cache. You are an ordinary user (no network admin). Can you determine (and if yes, how) if a given external website was recently accessed?
+Answer - When I connect in the silo.sice.iu.edu using ssh and join the college network. I use dig command for iu.edu which takes 0ms query time. Then I use dig command for snapdeal.com [indian shopping website] which takes around 12ms of query time. After that I again run the same command and now the query time is 0ms. This basically means that there has to be an internal DNS Cache which stores the recently accessed websites 
+
+nkamble@silo:~$ dig iu.edu
+
+; <<>> DiG 9.16.1-Ubuntu <<>> iu.edu
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 44778
+;; flags: qr rd ra; QUERY: 1, ANSWER: 2, AUTHORITY: 0, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 65494
+;; QUESTION SECTION:
+;iu.edu.				IN	A
+
+;; ANSWER SECTION:
+iu.edu.			600	IN	A	129.79.123.148
+iu.edu.			600	IN	A	129.79.123.149
+
+;; Query time: 0 msec
+;; SERVER: 127.0.0.53#53(127.0.0.53)
+;; WHEN: Fri Sep 17 23:14:34 EDT 2021
+;; MSG SIZE  rcvd: 67
+
+-----------------------------------------------------------------------------------
+
+nkamble@silo:~$ dig snapdeal.com
+
+; <<>> DiG 9.16.1-Ubuntu <<>> snapdeal.com
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 7516
+;; flags: qr rd ra; QUERY: 1, ANSWER: 2, AUTHORITY: 0, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 65494
+;; QUESTION SECTION:
+;snapdeal.com.			IN	A
+
+;; ANSWER SECTION:
+snapdeal.com.		1800	IN	A	103.194.153.149
+snapdeal.com.		1800	IN	A	103.194.152.149
+
+;; Query time: 12 msec
+;; SERVER: 127.0.0.53#53(127.0.0.53)
+;; WHEN: Fri Sep 17 23:14:48 EDT 2021
+;; MSG SIZE  rcvd: 73
+
+-----------------------------------------------------------------------------------
+
+nkamble@silo:~$ dig snapdeal.com
+
+; <<>> DiG 9.16.1-Ubuntu <<>> snapdeal.com
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 25136
+;; flags: qr rd ra; QUERY: 1, ANSWER: 2, AUTHORITY: 0, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 65494
+;; QUESTION SECTION:
+;snapdeal.com.			IN	A
+
+;; ANSWER SECTION:
+snapdeal.com.		1791	IN	A	103.194.152.149
+snapdeal.com.		1791	IN	A	103.194.153.149
+
+;; Query time: 0 msec
+;; SERVER: 127.0.0.53#53(127.0.0.53)
+;; WHEN: Fri Sep 17 23:14:57 EDT 2021
+;; MSG SIZE  rcvd: 73
+
