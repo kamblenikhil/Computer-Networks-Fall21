@@ -69,15 +69,21 @@ void tcp_chat_server(long port)
             bzero(buffer, sizeof(buffer));
         }
         
-        // if msg contains "exit" then server exit and chat ended.
-        else if (strncmp("exit", buffer, strlen("exit")) == 0){printf("Client Exit\n");}
+        // if msg contains "exit" then server and client exit and chat is ended.
+        else if (strncmp("exit", buffer, strlen("exit")) == 0){
+            printf("got message from ('%s', %d)\n", inet_ntop(AF_INET,&address.sin_addr,str,sizeof(str)), htons(address.sin_port));
+            send(new_socket, "ok", strlen("ok"), 0);
+            bzero(buffer, sizeof(buffer));
+            break;
+        }
         
-        // print the message from client
+        // if any other message comes from client
         else{
             printf("got message from ('%s', %d)\n", inet_ntop(AF_INET,&address.sin_addr,str,sizeof(str)), htons(address.sin_port));
 
             int num = 0;
             while((buffer[num++] = tolower(getchar()) != '\n'));
+            do{buffer[num++] = '\n'; break;}while(1);
             send(new_socket, buffer, sizeof(buffer), 0);
             bzero(buffer, sizeof(buffer));
         }
@@ -105,19 +111,22 @@ void tcp_chat_client(long port)
     while(1)
     {
         bzero(buffer, sizeof(buffer));
-        int num =0;
+        int num = 0;
+
         send(sock, buffer, sizeof(buffer), 0);
-        
+        printf("%s\n", buffer);
         bzero(buffer, sizeof(buffer));
+        num=0;
 
         //print the incoming message from the server
         while((buffer[num++] = tolower(getchar()) != '\n'));
         recv(sock, buffer, sizeof(buffer), 0);
-        printf("%s", buffer);
+        printf("%s\n", buffer);
         bzero(buffer, sizeof(buffer));
         
-        //if server sends exit message, client terminal exits
+        //if server sends farewell/ok message, client terminal exits
         if ((strncmp(buffer, "farewell", strlen("farewell"))) == 0){ break; }
+        if ((strncmp(buffer, "ok", strlen("ok"))) == 0){ break; }
 
         bzero(buffer, sizeof(buffer));
 
@@ -128,8 +137,8 @@ void tcp_chat_client(long port)
 
 void udp_chat_server(long port){
     int sockfd;
-    int connection_counter = 0;
     char buffer[1024] = {0};
+    char str[100];
     struct sockaddr_in servaddr, cliaddr;
       
     // Creating socket file descriptor
@@ -162,14 +171,14 @@ void udp_chat_server(long port){
 
         // if client message contains "hello" then server responds with "world".
         if (strncmp("hello", buffer, strlen("hello")) == 0){ 
-            printf("got message from client - %s\n", buffer);
+            printf("got message from ('%s', %d)\n", inet_ntop(AF_INET,&cliaddr.sin_addr,str,sizeof(str)), htons(cliaddr.sin_port));
             sendto(sockfd, "world", strlen("world"), MSG_CONFIRM, (const struct sockaddr *) &cliaddr, len);
             bzero(buffer, sizeof(buffer));
         }
 
         // if client message contains "goodbye" then server responds with "farewell".
         else if (strncmp("goodbye", buffer, strlen("goodbye")) == 0){
-            printf("got message from client - %s\n", buffer);
+            printf("got message from ('%s', %d)\n", inet_ntop(AF_INET,&cliaddr.sin_addr,str,sizeof(str)), htons(cliaddr.sin_port));
             sendto(sockfd, "farewell", strlen("farewell"), MSG_CONFIRM, (const struct sockaddr *) &cliaddr, len);
             bzero(buffer, sizeof(buffer));
         }
@@ -179,7 +188,7 @@ void udp_chat_server(long port){
         
         // print the message from client
         else{
-            printf("got message from client - %s\n", buffer);
+            printf("got message from ('%s', %d)\n", inet_ntop(AF_INET,&cliaddr.sin_addr,str,sizeof(str)), htons(cliaddr.sin_port));
 
             int n = 0;
             while ((buffer[n++] = getchar()) != '\n');
@@ -209,18 +218,18 @@ void udp_chat_client(long port){
     servaddr.sin_family = AF_INET;
     servaddr.sin_port = htons(port);
     servaddr.sin_addr.s_addr = INADDR_ANY;
-      
     while(1)
     {
         unsigned int len = sizeof(servaddr);
         bzero(buffer, sizeof(buffer));
         int n = 0;
         while ((buffer[n++] = getchar()) != '\n');
-        
+
         sendto(sockfd, buffer, sizeof(buffer), MSG_CONFIRM, (const struct sockaddr *) &servaddr, sizeof(servaddr));
-            
+
         recvfrom(sockfd, buffer, sizeof(buffer), MSG_WAITALL, (struct sockaddr *) &servaddr, &len);
         printf("%s\n", buffer);
+
         bzero(buffer, sizeof(buffer));
     }
     close(sockfd);
