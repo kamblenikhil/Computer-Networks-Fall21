@@ -26,7 +26,7 @@ void tcp_chat_server(long port)
     int addrlen = sizeof(address);
     char buffer[1024] = {0};
     char str[100];
-       
+
     // Creating socket file descriptor
     if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0) { perror("socket failed"); exit(0); }
        
@@ -54,33 +54,30 @@ void tcp_chat_server(long port)
 
         // if client message contains "hello" then server responds with "world".
         if (strncmp("hello", buffer, strlen("hello")) == 0){ 
-            printf("(hello)got message from ('%s', %d)\n", inet_ntop(AF_INET,&address.sin_addr,str,sizeof(str)), htons(address.sin_port));
-            send(new_socket, "world", strlen("world"), 0); 
+            printf("got message from ('%s', %d)\n", inet_ntop(AF_INET,&address.sin_addr,str,sizeof(str)), htons(address.sin_port));
+            send(new_socket, "world\n", strlen("world\n"), 0); 
             bzero(buffer, sizeof(buffer));
         }
 
         // if client message contains "goodbye" then server responds with "farewell".
         else if (strncmp("goodbye", buffer, strlen("goodbye")) == 0){
-            printf("(goodbye)got message from ('%s', %d)\n", inet_ntop(AF_INET,&address.sin_addr,str,sizeof(str)), htons(address.sin_port));
-            send(new_socket, "farewell", strlen("farewell"), 0);
+            printf("got message from ('%s', %d)\n", inet_ntop(AF_INET,&address.sin_addr,str,sizeof(str)), htons(address.sin_port));
+            send(new_socket, "farewell\n", strlen("farewel\n"), 0);
             bzero(buffer, sizeof(buffer));
         }
 
         // if msg contains "exit" then server and client exit and chat is ended.
         else if (strncmp("exit", buffer, strlen("exit")) == 0){
-            printf("(exit)got message from ('%s', %d)\n", inet_ntop(AF_INET,&address.sin_addr,str,sizeof(str)), htons(address.sin_port));
-            send(new_socket, "ok", strlen("ok"), 0);
+            printf("got message from ('%s', %d)\n", inet_ntop(AF_INET,&address.sin_addr,str,sizeof(str)), htons(address.sin_port));
+            send(new_socket, "ok\n", strlen("ok\n"), 0);
             bzero(buffer, sizeof(buffer));
             break;
         }
         else{
             // if any other message comes from client
             printf("got message from ('%s', %d)\n", inet_ntop(AF_INET,&address.sin_addr,str,sizeof(str)), htons(address.sin_port));
-            if(fgets(buffer, sizeof(buffer), stdin) != 0){
-                send(new_socket, buffer, sizeof(buffer), 0);
-                bzero(buffer, sizeof(buffer));
-            }
-        
+            send(new_socket, buffer, sizeof(buffer), 0);
+            bzero(buffer, sizeof(buffer));
         }
     }
     close(new_socket);
@@ -104,7 +101,6 @@ void tcp_chat_client(long port)
 
     while(1)
     {
-
         if(fgets(buffer, sizeof(buffer), stdin) != 0){
             send(sock, buffer, sizeof(buffer), 0);
             bzero(buffer, sizeof(buffer));
@@ -112,13 +108,11 @@ void tcp_chat_client(long port)
 
         //print the incoming message from the server
         recv(sock, buffer, sizeof(buffer), 0);
-        printf("%s\n", buffer);
-        bzero(buffer, sizeof(buffer));
-        
+        printf("%s", buffer);
+
         //if server sends farewell/ok message, client terminal exits
         if ((strncmp(buffer, "farewell", strlen("farewell"))) == 0){ break; }
         if ((strncmp(buffer, "ok", strlen("ok"))) == 0){ break; }
-
     }
     close(sock);
 }
@@ -155,19 +149,18 @@ void udp_chat_server(long port){
     {
         unsigned int len = sizeof(cliaddr);
         recvfrom(sockfd, (char *)buffer, sizeof(buffer), MSG_WAITALL, ( struct sockaddr *) &cliaddr, &len);
-        bzero(buffer, sizeof(buffer));
 
         // if client message contains "hello" then server responds with "world".
         if (strncmp("hello", buffer, strlen("hello")) == 0){ 
             printf("got message from ('%s', %d)\n", inet_ntop(AF_INET,&cliaddr.sin_addr,str,sizeof(str)), htons(cliaddr.sin_port));
-            sendto(sockfd, "world", strlen("world"), MSG_CONFIRM, (const struct sockaddr *) &cliaddr, len);
+            sendto(sockfd, "world\n", strlen("world\n"), MSG_CONFIRM, (const struct sockaddr *) &cliaddr, len);
             bzero(buffer, sizeof(buffer));
         }
 
         // if client message contains "goodbye" then server responds with "farewell".
         else if (strncmp("goodbye", buffer, strlen("goodbye")) == 0){
             printf("got message from ('%s', %d)\n", inet_ntop(AF_INET,&cliaddr.sin_addr,str,sizeof(str)), htons(cliaddr.sin_port));
-            sendto(sockfd, "farewell", strlen("farewell"), MSG_CONFIRM, (const struct sockaddr *) &cliaddr, len);
+            sendto(sockfd, "farewell\n", strlen("farewell\n"), MSG_CONFIRM, (const struct sockaddr *) &cliaddr, len);
             bzero(buffer, sizeof(buffer));
         }
         
@@ -177,13 +170,9 @@ void udp_chat_server(long port){
         else{
             // print the message from client
             printf("got message from ('%s', %d)\n", inet_ntop(AF_INET,&cliaddr.sin_addr,str,sizeof(str)), htons(cliaddr.sin_port));
-
-            if(fgets(buffer, sizeof(buffer), stdin) != 0){
-                sendto(sockfd, buffer, sizeof(buffer), MSG_CONFIRM, (const struct sockaddr *) &cliaddr, len);
-                bzero(buffer, sizeof(buffer));
-            }
+            sendto(sockfd, buffer, sizeof(buffer), MSG_CONFIRM, (const struct sockaddr *) &cliaddr, len);
+            bzero(buffer, sizeof(buffer));
         }
-
     }
 
 }
@@ -214,9 +203,8 @@ void udp_chat_client(long port){
         }
 
         recvfrom(sockfd, buffer, sizeof(buffer), MSG_WAITALL, (struct sockaddr *) &servaddr, &len);
-        printf("%s\n", buffer);
+        printf("%s", buffer);
         bzero(buffer, sizeof(buffer));
-
     }
     close(sockfd);
 }
