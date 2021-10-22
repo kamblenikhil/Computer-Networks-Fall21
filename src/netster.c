@@ -36,11 +36,7 @@ void run_server(cfg_t *cfg, const char* appname) {
     }
     if (cfg->use_udp || cfg->use_rudp == 0) {
 #ifdef P2_H
-<<<<<<< HEAD
-      file_server(cfg->iface, cfg->port, cfg->fstream);
-=======
       file_server(cfg->iface, cfg->port, cfg->use_udp, cfg->fstream);
->>>>>>> upstream/master
 #else
       notimplemented("file_server");
 #endif
@@ -86,11 +82,7 @@ void run_client(cfg_t *cfg, const char* appname) {
     }
     if (cfg->use_udp || cfg->use_rudp == 0) {
 #ifdef P2_H
-<<<<<<< HEAD
-      file_client(cfg->server, cfg->port, cfg->fstream);
-=======
       file_client(cfg->server, cfg->port, cfg->use_udp, cfg->fstream);
->>>>>>> upstream/master
 #else
       notimplemented("file_client");
 #endif
@@ -218,8 +210,4 @@ int main(int argc, char **argv) {
   }
   
   return 0;
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> upstream/master
