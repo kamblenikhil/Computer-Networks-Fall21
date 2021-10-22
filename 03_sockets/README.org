@@ -113,8 +113,13 @@ message exchanges in some well-defined manner.
     1299)~
   + Print each incoming client message with the string ~got message
     from ('<host>', <port>)~, with the same definitions of ~<host>~
+<<<<<<< HEAD
     and ~<port>~ from above.  Example: ~got message from ('127.0.0.1',
     1299)~
+=======
+    and ~<port>~ from above.  Example: ~got message from ('127.0.0.1', 1299)~
+    *Do not print the content of the message itself!*
+>>>>>>> upstream/master
 - All messages must end with LF (line feed, or ~\n~) character.
 - Limit maximum message size to 256 bytes, /including/ the termination
   character.
