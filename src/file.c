@@ -134,21 +134,31 @@ void udp_file_server(long port, FILE *fp){
         exit(EXIT_FAILURE);
     }
 
+    while(1)
+    {
+        unsigned int len = sizeof(cliaddr);
+
         while(!feof(fp))
         {
-            unsigned int len = sizeof(cliaddr);
-            
             //recvfrom returns number of bytes from the IO stream
-            n = recvfrom(sockfd, (char *)buffer, sizeof(buffer), MSG_WAITALL, ( struct sockaddr *) &cliaddr, &len);
-            printf("%d", n);
-            if(n <= 0)
+            n = recvfrom(sockfd, (char *)buffer, sizeof(buffer), 0, ( struct sockaddr *) &cliaddr, &len);
+            
+            if(n < 0){
+                perror("Receieved Failed");
+                break;
+            }
+            else if(n == 0)
             {
-                memset(buffer, 0, sizeof(buffer));
                 fclose(fp);
+                close(sockfd);
                 exit(0);
             }
-            fwrite(buffer, n, 1, fp);
+            else
+            {
+                fwrite(buffer, n, 1, fp);
+            }
         }
+    }
 }
 
 void udp_file_client(long port, FILE *fp){
@@ -174,14 +184,15 @@ void udp_file_client(long port, FILE *fp){
 
     while(1)
     {
-       
+        // fseek(fp, 0, SEEK_SET);
+
         while(!feof(fp))
         {
             //fread returns number of bytes from the IO stream
             b = fread(buffer, 1, sizeof(buffer), fp);
-            sendto(sockfd, buffer, b, MSG_CONFIRM, (const struct sockaddr *) &servaddr, sizeof(servaddr));
+            sendto(sockfd, buffer, b, 0, (const struct sockaddr *) &servaddr, sizeof(servaddr));
         }
-
+        sendto(sockfd, 0, 0, 0, (const struct sockaddr *) &servaddr, sizeof(servaddr));
         memset(buffer, 0, sizeof(buffer));
         fclose(fp);
         close(sockfd);
@@ -193,12 +204,12 @@ void file_server(char* iface, long port, int use_udp, FILE* fp)
 {
     if(use_udp)
     {
-        printf("udp server");
+        // printf("udp file server");
         udp_file_server(port, fp);
     }
     else
     {
-        // printf("tcp server");
+        // printf("tcp file server");
         tcp_file_server(port, fp);
     }  
 }
@@ -207,12 +218,12 @@ void file_client(char* host, long port, int use_udp, FILE* fp)
 {
     if(use_udp)
     {
-        // printf("udp client");
+        // printf("udp file client");
         udp_file_client(port, fp);
     }
     else
     {
-        // printf("tcp client");
+        // printf("tcp file client");
         tcp_file_client(port, fp);
     }
 }

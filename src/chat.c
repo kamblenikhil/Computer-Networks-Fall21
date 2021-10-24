@@ -261,7 +261,6 @@ void udp_chat_client(long port){
 /* Add function definitions */
 void chat_server(char* iface, long port, int use_udp) 
 {
-    // printf("connection ");
     if(use_udp)
     {
         // printf("udp server");
