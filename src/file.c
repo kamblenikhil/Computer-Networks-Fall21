@@ -27,11 +27,8 @@ void tcp_file_server(long port, FILE *fp)
     struct sockaddr_in address;
     int opt = 1;
     int addrlen = sizeof(address);
+    int n;
     char buffer[255] = {0};
-
-    //added
-    char *filename = "file2.txt";
-    fp = fopen(filename, "w");
 
     // Creating socket file descriptor
     if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0) { perror("Socket Creation Failed"); exit(0); }
@@ -53,21 +50,25 @@ void tcp_file_server(long port, FILE *fp)
 
     while(1)
     {
-        if ((client_socket = accept(server_fd, (struct sockaddr *)&address, (socklen_t*)&addrlen))<0){ perror("Socket Accept Failed"); exit(0); }
+        if ((client_socket = accept(server_fd, (struct sockaddr *)&address, (socklen_t*)&addrlen)) < 0){ perror("Socket Accept Failed"); exit(0); }
         else {
-
-                while(1)
+                
+                while(!feof(fp))
                 {
-                    //added
-                    fprintf(fp, "%s", buffer);
+                    //recv returns number of bytes from the IO stream
+                    n = recv( client_socket , buffer, sizeof(buffer), 0);
 
+                    if(n <= 0)
+                    {
+                        memset(buffer, 0, sizeof(buffer));
+                        fclose(fp);
+                        close(client_socket);
+                        exit(0);
+                    }
+                    fwrite(buffer, n, 1, fp);
                 }
-                memset(buffer, 0, sizeof(buffer));
-            }
-        }
-        memset(buffer, 0, sizeof(buffer));
-        close(client_socket);
-    memset(buffer, 0, sizeof(buffer));
+            }   
+    }
 
 }
 
@@ -76,10 +77,7 @@ void tcp_file_client(long port, FILE *fp)
     int sock = 0;
     struct sockaddr_in serv_addr;
     char buffer[255] = {0};
-    
-    //added
-    char *filename = "file1.txt";
-    fp = fopen(filename, "r");
+    int b;
 
     if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0){ printf("\n Socket creation error \n"); exit(0); }
    
@@ -93,26 +91,26 @@ void tcp_file_client(long port, FILE *fp)
     if(inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr)<=0){ printf("\n IP Address not valid \n"); exit(0); }
    
     if (connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0){ printf("\n Socket Failed Connection\n"); exit(0); }
+    
+    if(fp == NULL){ printf("\n Error in file reading\n"); exit(0); }
 
-    while(1)
+    while(!feof(fp))
     {
-        //to get input from the client terminal
-        if(fgets(buffer, sizeof(buffer), fp) != NULL)
-        {
-            send(sock, buffer, sizeof(buffer), 0);
-        }
-
-        memset(buffer, 0, sizeof(buffer));
-
+        //fread returns number of bytes from the IO stream
+        b = fread(buffer, 1, sizeof(buffer), fp);
+        send(sock, buffer, b, 0);
     }
+    memset(buffer, 0, sizeof(buffer));
+    fclose(fp); 
     close(sock);
+    exit(0);
 }
 
-/*
-void udp_file_server(long port){
+void udp_file_server(long port, FILE *fp){
+
     int sockfd;
-    char buffer[1024] = {0};
-    char str[100];
+    char buffer[255] = {0};
+    int n;
     struct sockaddr_in servaddr, cliaddr;
       
     // Creating socket file descriptor
@@ -136,45 +134,28 @@ void udp_file_server(long port){
         exit(EXIT_FAILURE);
     }
 
-    while(1)
-    {
-        unsigned int len = sizeof(cliaddr);
-        recvfrom(sockfd, (char *)buffer, sizeof(buffer), MSG_WAITALL, ( struct sockaddr *) &cliaddr, &len);
-        printf("got message from ('%s', %d)\n", inet_ntop(AF_INET,&cliaddr.sin_addr,str,sizeof(str)), htons(cliaddr.sin_port));
-
-
-        // if client message contains "hello" then server responds with "world".
-        if (strncmp("hello", buffer, strlen("hello")) == 0){ 
-            sendto(sockfd, "world\n", strlen("world\n"), MSG_CONFIRM, (const struct sockaddr *) &cliaddr, len);
+        while(!feof(fp))
+        {
+            unsigned int len = sizeof(cliaddr);
+            
+            //recvfrom returns number of bytes from the IO stream
+            n = recvfrom(sockfd, (char *)buffer, sizeof(buffer), MSG_WAITALL, ( struct sockaddr *) &cliaddr, &len);
+            printf("%d", n);
+            if(n <= 0)
+            {
+                memset(buffer, 0, sizeof(buffer));
+                fclose(fp);
+                exit(0);
+            }
+            fwrite(buffer, n, 1, fp);
         }
-
-        // if client message contains "goodbye" then server responds with "farewell".
-        else if (strncmp("goodbye", buffer, strlen("goodbye")) == 0){
-            sendto(sockfd, "farewell\n", strlen("farewell\n"), MSG_CONFIRM, (const struct sockaddr *) &cliaddr, len);
-        }
-        
-        // if msg contains "exit" then server exit and chat ended.
-        else if (strncmp("exit", buffer, strlen("exit")) == 0){
-            sendto(sockfd, "ok\n", strlen("ok\n"), MSG_CONFIRM, (const struct sockaddr *) &cliaddr, len);
-            close(sockfd);
-            break;
-        }
-        
-        else{
-            // print the message from client
-            sendto(sockfd, buffer, sizeof(buffer), MSG_CONFIRM, (const struct sockaddr *) &cliaddr, len);
-        }
-        
-        memset(buffer, 0, sizeof(buffer));
-    }
-    memset(buffer, 0, sizeof(buffer));
-
 }
 
-void udp_file_client(long port){
+void udp_file_client(long port, FILE *fp){
     int sockfd;
-    char buffer[1024] = {0};
+    char buffer[255] = {0};
     struct sockaddr_in     servaddr;
+    int b;
   
     // Creating socket file descriptor
     if ( (sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0 ) {
@@ -188,41 +169,32 @@ void udp_file_client(long port){
     servaddr.sin_family = AF_INET;
     servaddr.sin_port = htons(port);
     servaddr.sin_addr.s_addr = INADDR_ANY;
+
+    if(fp == NULL){ printf("\n Error in file reading\n"); exit(0); }
+
     while(1)
     {
-        unsigned int len = sizeof(servaddr);
        
-        if(fgets(buffer, sizeof(buffer), stdin) != 0){
-            sendto(sockfd, buffer, sizeof(buffer), MSG_CONFIRM, (const struct sockaddr *) &servaddr, sizeof(servaddr));
-
-            //if the client send exit, it should print the reply from server(ie. ok) and exit
-            if ((strncmp(buffer, "exit", strlen("exit"))) == 0)
-            {
-                memset(buffer, 0, sizeof(buffer));
-                //print the incoming message from the server
-                recvfrom(sockfd, buffer, sizeof(buffer), MSG_WAITALL, (struct sockaddr *) &servaddr, &len);
-                printf("%s", buffer);
-                exit(0);
-            }
+        while(!feof(fp))
+        {
+            //fread returns number of bytes from the IO stream
+            b = fread(buffer, 1, sizeof(buffer), fp);
+            sendto(sockfd, buffer, b, MSG_CONFIRM, (const struct sockaddr *) &servaddr, sizeof(servaddr));
         }
-        memset(buffer, 0, sizeof(buffer));
-        recvfrom(sockfd, buffer, sizeof(buffer), MSG_WAITALL, (struct sockaddr *) &servaddr, &len);
-        printf("%s", buffer);
 
         memset(buffer, 0, sizeof(buffer));
+        fclose(fp);
+        close(sockfd);
+        exit(0);
     }
-    memset(buffer, 0, sizeof(buffer));
-    close(sockfd);
 }
-*/
 
 void file_server(char* iface, long port, int use_udp, FILE* fp) 
 {
-    printf("connection ");
     if(use_udp)
     {
         printf("udp server");
-        // udp_file_server(port, fp);
+        udp_file_server(port, fp);
     }
     else
     {
@@ -235,8 +207,8 @@ void file_client(char* host, long port, int use_udp, FILE* fp)
 {
     if(use_udp)
     {
-        printf("udp client");
-        // udp_file_client(port, fp);
+        // printf("udp client");
+        udp_file_client(port, fp);
     }
     else
     {
