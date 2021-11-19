@@ -167,7 +167,7 @@ void stopandwait_client(char* host, long port, FILE* fp) {
                 socklen_t len = sizeof(servaddr);
                 f_recv_size = recvfrom(sockfd, &frame_recv, sizeof(frame_recv), 0 ,(struct sockaddr*)&servaddr, &len);
 
-                if(time_out <= 3)
+                if(time_out <= 0.300)
                 {
                     if( f_recv_size > 0 && frame_recv.sq_no == 0 && frame_recv.ack == frame_id+1)
                     {
