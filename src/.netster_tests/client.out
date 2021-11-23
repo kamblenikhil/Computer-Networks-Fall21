@@ -1,0 +1,17 @@
+Hello, I am a client
+Acknowledge Not Receieved for Packet [1] 
+Acknowledge Receieved for Packet [1] 
+Acknowledge Receieved for Packet [2] 
+Acknowledge Not Receieved for Packet [3] 
+Acknowledge Receieved for Packet [3] 
+Acknowledge Receieved for Packet [4] 
+Acknowledge Not Receieved for Packet [5] 
+Acknowledge Receieved for Packet [5] 
+Acknowledge Not Receieved for Packet [6] 
+Acknowledge Receieved for Packet [6] 
+
+real	0m5.004s
+user	0m0.000s
+sys	0m0.000s
+TIMEOUT_27742
+Connection to client closed.

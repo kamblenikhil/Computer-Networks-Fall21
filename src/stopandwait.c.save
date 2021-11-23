@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include "file.h"
+#include <stdio.h>
 
 #include <stdlib.h>
 #include <string.h>
@@ -7,7 +8,6 @@
 
 #include <sys/socket.h>
 #include <sys/types.h>
-#include <errno.h>
 #include <time.h>
 #include <sys/stat.h>
 #include <ctype.h>
@@ -18,7 +18,7 @@
 
 // creating a data packet
 typedef struct packet{
-    char data[240];
+    char data[256];
 }Packet;
 
 // creating a packet with frame_kind (ACK, SEQ, FIN), data packet and packet size
@@ -34,8 +34,7 @@ void stopandwait_server(char* iface, long port, FILE* fp) {
 
     int sockfd;
     // socklen_t len;
-    char buffer[240];
-    //int timeout;
+    char buffer[256];
     int f_recv_size;
     // char some_string[1];
     int k = 0;
@@ -49,18 +48,18 @@ void stopandwait_server(char* iface, long port, FILE* fp) {
       
     memset(&servaddr, 0, sizeof(servaddr));
     memset(&cliaddr, 0, sizeof(cliaddr));
-
-    bzero(&servaddr.sin_zero, 8);
       
     // Filling server information
     servaddr.sin_family = AF_INET;
     servaddr.sin_addr.s_addr = INADDR_ANY;
     servaddr.sin_port = htons(port);
 
-    int frame_id=0;
-    Frame frame_recv;
-    Frame frame_send;
+	int frame_id=0;
+	Frame frame_recv;
+	Frame frame_send;	
       
+
+	
     // Bind the socket with the server address
     if ( bind(sockfd, (const struct sockaddr *)&servaddr, sizeof(servaddr)) < 0 )
     {
@@ -68,18 +67,11 @@ void stopandwait_server(char* iface, long port, FILE* fp) {
         exit(EXIT_FAILURE);
     }
 
-    //struct timeval timeout;
-    //timeout.tv_sec = 1;
-    //timeout.tv_usec = 70 * 1000;
-    int xyz = 1;
-    setsockopt( sockfd, SOL_SOCKET, SO_REUSEADDR, &xyz, sizeof(xyz));
 
     socklen_t len = sizeof(cliaddr);
 
     while(1)
     {
-	    //bzero(buffer, sizeof(buffer));
-	    //memset(buffer, 0, sizeof(buffer));
             //recvfrom returns number of bytes from the IO stream
             f_recv_size = recvfrom(sockfd, &frame_recv, sizeof(Frame), 0, ( struct sockaddr *) &cliaddr, &len);
             // printf("recvsize - %d \n", frame_recv.p_size);
@@ -87,18 +79,16 @@ void stopandwait_server(char* iface, long port, FILE* fp) {
 
             if(f_recv_size <= 0)
             {
-		//bzero(buffer, sizeof(buffer));
-		//memset(buffer, 0, sizeof(buffer));
-		//fflush(fp);
+                fclose(fp);
                 close(sockfd);
-                return;
+                exit(0);
             }
             else
             {
                 k = k + 1;
 
                 //writing the frame to the file
-                memcpy(buffer, frame_recv.packet.data, 240);
+                memcpy(buffer, frame_recv.packet.data, 256);
                 // printf("data - %s \n",buffer);
                 fwrite(buffer, frame_recv.p_size, 1, fp);
                 
@@ -110,32 +100,28 @@ void stopandwait_server(char* iface, long port, FILE* fp) {
                 sendto(sockfd, &frame_send, sizeof(frame_send), 0, (struct sockaddr*) &cliaddr, len);
 
                 printf("Packet [%d] Received \n", k);
-		//memset(buffer, 0, sizeof(buffer));
-		// perror("Receieved Failed");
-		//fflush(fp);
+                // perror("Receieved Failed");
             }
-      	    //fflush(fp);
-	    //memset(buffer, 0, sizeof(buffer));
+		    
             frame_id++;
     }
+  
 }
 
 void stopandwait_client(char* host, long port, FILE* fp) {
 
     int sockfd;
-    // socklen_t len;
+	// socklen_t len;
     int k = 0, x, b;
-    char buffer[240];
-   // int time_out = 1;
+    char buffer[256];
+    int time_out;
     struct sockaddr_in     servaddr;
     int f_recv_size;
 
     // timeout
     struct timeval timeout;      
     timeout.tv_sec = 1;
-    //timeout.tv_usec = 10000;
-    timeout.tv_usec = 70 * 1000;
-    //int timeout = 1;
+    timeout.tv_usec = 70000;
   
     // Creating socket file descriptor
     if ( (sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0 ) { perror("Socket Creation Failed"); exit(EXIT_FAILURE); }
@@ -145,16 +131,14 @@ void stopandwait_client(char* host, long port, FILE* fp) {
     // Filling server information
     servaddr.sin_family = AF_INET;
     servaddr.sin_port = htons(port);
-    struct hostent *hostname = gethostbyname(host);
-    unsigned int server_address = *(unsigned long*) hostname->h_addr_list[0];
-    servaddr.sin_addr.s_addr = server_address;
+    servaddr.sin_addr.s_addr = INADDR_ANY;
 
 	int frame_id = 0;
 	Frame frame_send;
 	Frame frame_recv;
 
     // timeout thingy
-    setsockopt (sockfd, SOL_SOCKET, SO_RCVTIMEO, (const char*)&timeout, sizeof(timeout));
+    time_out = setsockopt (sockfd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof timeout);
 
     if(fp == NULL){ printf("\n Error in File Reading\n"); exit(0); }
 
@@ -173,8 +157,8 @@ void stopandwait_client(char* host, long port, FILE* fp) {
             while(!feof(fp))
             {        
                 //fread returns number of bytes from the IO stream
-                b = fread(buffer, 1, 240, fp);
-                memcpy(frame_send.packet.data, buffer, 240);
+                b = fread(buffer, 1, 256, fp);
+                memcpy(frame_send.packet.data, buffer, 256);
                 frame_send.p_size = b;
                 // printf("MSG - %s %d \n", frame_send.packet.data, b);
 
@@ -186,6 +170,8 @@ void stopandwait_client(char* host, long port, FILE* fp) {
                 socklen_t len = sizeof(servaddr);
                 f_recv_size = recvfrom(sockfd, &frame_recv, sizeof(frame_recv), 0 ,(struct sockaddr*)&servaddr, &len);
 
+                if(time_out <= 1)
+                {
                     if( f_recv_size > 0 && frame_recv.sq_no == 0 && frame_recv.ack == frame_id+1)
                     {
                         printf("Acknowledge Receieved for Packet [%d] \n", k);
@@ -198,24 +184,25 @@ void stopandwait_client(char* host, long port, FILE* fp) {
                         ack_recv = 0;
                         goto resend;
                     }
-		//memset(buffer, 0, sizeof(buffer));
-		//fflush(fp);
+                }
+                else
+                {
+                        printf("Acknowledge Never Receieved for Packet [%d] \n", k);
+                        ack_recv = 0;
+                        goto resend;
+                }
                 k = k + 1;
             }
-	    fflush(fp);
             // frame_send.end = -1;
-            //memset(buffer, 0, sizeof(buffer));
+            // memset(buffer, 0, sizeof(buffer));
             ack_recv = 0;
-            for(int i = 0; i < 10; i++)
-	    {
-            	sendto(sockfd, 0, 0, 0, (const struct sockaddr *) &servaddr, sizeof(servaddr));
-            }
-	    //bzero(buffer, sizeof(buffer));
-            //frame_id++;
-            //printf("kk");
-            //memset(buffer, 0, sizeof(buffer));
+            sendto(sockfd, 0, 0, 0, (const struct sockaddr *) &servaddr, sizeof(servaddr));
+            bzero(buffer, sizeof(buffer));
+            // frame_id++;
+            // printf("kk");
+            memset(buffer, 0, sizeof(buffer));
             close(sockfd);
-	    //fflush(fp);
-	    return;
+            exit(0);
+        
     }
 }
