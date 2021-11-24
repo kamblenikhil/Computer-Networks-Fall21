@@ -78,18 +78,10 @@ void stopandwait_server(char* iface, long port, FILE* fp) {
 
     while(1)
     {
-	    //bzero(buffer, sizeof(buffer));
-	    //memset(buffer, 0, sizeof(buffer));
-            //recvfrom returns number of bytes from the IO stream
             f_recv_size = recvfrom(sockfd, &frame_recv, sizeof(Frame), 0, ( struct sockaddr *) &cliaddr, &len);
-	    // printf("recvsize - %d \n", frame_recv.p_size);
-            // printf("data - %s \n",frame_recv.packet.data);
 
             if(f_recv_size <= 0 || frame_recv.p_size == 0)
             {
-		//bzero(buffer, sizeof(buffer));
-		//memset(buffer, 0, sizeof(buffer));
-		//fflush(fp);
                 close(sockfd);
                 return;
             }
@@ -99,7 +91,6 @@ void stopandwait_server(char* iface, long port, FILE* fp) {
 
                 //writing the frame to the file
                 memcpy(buffer, frame_recv.packet.data, 240);
-                // printf("data - %s \n",buffer);
 		if(frame_recv.p_size == 0)
 		{
 			//fflush(fp);
@@ -117,11 +108,7 @@ void stopandwait_server(char* iface, long port, FILE* fp) {
 
                 printf("Packet [%d] Received \n", k);
 		memset(buffer, 0, sizeof(buffer));
-		// perror("Receieved Failed");
-		//fflush(fp);
             }
-      	    //fflush(fp);
-	    //memset(buffer, 0, sizeof(buffer));
             frame_id++;
     }
 }
@@ -139,9 +126,7 @@ void stopandwait_client(char* host, long port, FILE* fp) {
     // timeout
     struct timeval timeout;      
     timeout.tv_sec = 0;
-    //timeout.tv_usec = 10000;
     timeout.tv_usec = 50 * 1000;
-    //int timeout = 1;
   
     // Creating socket file descriptor
     if ( (sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0 ) { perror("Socket Creation Failed"); exit(EXIT_FAILURE); }
@@ -186,7 +171,6 @@ void stopandwait_client(char* host, long port, FILE* fp) {
 
                 resend: x = sendto(sockfd, &frame_send, sizeof(frame_send), 0, (const struct sockaddr *) &servaddr, sizeof(servaddr));
                 if(x == -1){ perror("Error in File Transfer");}
-                //frame send
                 // printf("SENT");
             
                 socklen_t len = sizeof(servaddr);
@@ -205,24 +189,15 @@ void stopandwait_client(char* host, long port, FILE* fp) {
                         ack_recv = 0;
                         goto resend;
                     }
-		//memset(buffer, 0, sizeof(buffer));
-		//fflush(fp);
                 k = k + 1;
             }
-	    //fflush(fp);
-            // frame_send.end = -1;
             memset(buffer, 0, sizeof(buffer));
             ack_recv = 0;
             for(int i = 0; i < 7; i++)
 	    {
             	sendto(sockfd, 0, 0, 0, (const struct sockaddr *) &servaddr, sizeof(servaddr));
             }
-	    //bzero(buffer, sizeof(buffer));
-            //frame_id++;
-            //printf("kk");
-            //memset(buffer, 0, sizeof(buffer));
             close(sockfd);
-	    //fflush(fp);
 	    return;
     }
 }
