@@ -45,50 +45,23 @@ struct node_t {
     struct node_t* next;
 };
 
-// removing the first node_data from ring_buffer
-int pop_first_element(struct node_t* head) 
-{
-    int sq_no = head->sq_no;
-    int p_size = head->p_size;
-    char data[240] = head->data;
-
-    struct node_t* temp;
-
-    if (head == NULL) {
-        return -1;
-    }
-
-    // removing the first element
-    temp = head;
-    head = head->next;
-
-    // release the memory for that first element
-    free(temp);
-
-    return sq_no, p_size, data;
-}
-
 // searching the elements from the ring buffer
-int searching_the_element(struct node_t* head, int window_size)
+struct node_t* searching_the_element(struct node_t* head, int index)
 {
-    int sq_no = head->sq_no;
-    int p_size = head->p_size;
-    char data[240] = head->data;
+    struct node_t* current = head;
+    int count = 0;
 
-    struct node_t* temp;
-
-    if (head == NULL) {
-        return -1;
+    // searching the n'th element
+    while (current->next != NULL) {
+        // printf("while madhe");
+        if (count == index)
+        {
+            return current;
+        }    
+        count++;
+        current = current->next;
     }
-
-    // removing the first element
-    temp = head;
-    head = head->next;
-
-    // release the memory for that first element
-    free(temp);
-
-    return sq_no, p_size, data;
+    return current;
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -101,7 +74,7 @@ void gbn_server(char* iface, long port, FILE* fp) {
     //int timeout;
     int f_recv_size;
     // char some_string[1];
-    int k = 0;
+    int seqno = 0;
     struct sockaddr_in servaddr, cliaddr;
       
     // Creating socket file descriptor
@@ -120,7 +93,6 @@ void gbn_server(char* iface, long port, FILE* fp) {
     servaddr.sin_addr.s_addr = INADDR_ANY;
     servaddr.sin_port = htons(port);
 
-    int frame_id=0;
     Frame frame_recv;
     Frame frame_send;
       
@@ -131,9 +103,6 @@ void gbn_server(char* iface, long port, FILE* fp) {
         exit(EXIT_FAILURE);
     }
 
-    //struct timeval timeout;
-    //timeout.tv_sec = 1;
-    //timeout.tv_usec = 70 * 1000;
     int xyz = 1;
     setsockopt( sockfd, SOL_SOCKET, SO_REUSEADDR, &xyz, sizeof(xyz));
 
@@ -150,30 +119,34 @@ void gbn_server(char* iface, long port, FILE* fp) {
             }
             else
             {
-                k = k + 1;
-
-                //writing the frame to the file
-                memcpy(buffer, frame_recv.packet.data, 240);
-
-                if(frame_recv.p_size == 0)
+                if(seqno == frame_recv.sq_no)
                 {
-                    //fflush(fp);
-                    close(sockfd);
-                    return;
+
+                    //writing the frame to the file
+                    memcpy(buffer, frame_recv.packet.data, 240);
+
+                    if(frame_recv.p_size == 0)
+                    {
+                        //fflush(fp);
+                        close(sockfd);
+                        return;
+                    }
+                    
+                    // printf("%d %s", frame_recv.p_size, frame_recv.packet.data);
+
+                    fwrite(buffer, frame_recv.p_size, 1, fp);
+                    
+                    frame_send.sq_no = 0;
+                    frame_send.ack = frame_recv.sq_no;
+
+                    //sending the acknowledgement
+                    sendto(sockfd, &frame_send, sizeof(frame_send), 0, (struct sockaddr*) &cliaddr, len);
+
+                    printf("Packet [%d] Received \n", seqno);
+                    memset(buffer, 0, sizeof(buffer));
+                    seqno++;
                 }
-
-                fwrite(buffer, frame_recv.p_size, 1, fp);
-                
-                frame_send.sq_no = 0;
-                frame_send.ack = frame_recv.sq_no + 1;
-
-                //sending the acknowledgement
-                sendto(sockfd, &frame_send, sizeof(frame_send), 0, (struct sockaddr*) &cliaddr, len);
-
-                printf("Packet [%d] Received \n", k);
-		        memset(buffer, 0, sizeof(buffer));
             }
-            frame_id++;
     }
 }
 
@@ -181,7 +154,7 @@ void gbn_client(char* host, long port, FILE* fp) {
 
     int sockfd;
     int window_size = 5;
-    int k = 0, x, b;
+    int k = 0, b;
     char buffer[240];
     struct sockaddr_in     servaddr;
     int f_recv_size;
@@ -209,8 +182,6 @@ void gbn_client(char* host, long port, FILE* fp) {
 
     // initializing ring buffer Linked List (Node)
     struct node_t* head = NULL;
-    head = (struct node_t*)malloc(sizeof(struct node_t));
-    head->next = NULL;
 
     // timeout thingy
     setsockopt (sockfd, SOL_SOCKET, SO_RCVTIMEO, (const char*)&timeout, sizeof(timeout));
@@ -220,15 +191,17 @@ void gbn_client(char* host, long port, FILE* fp) {
     while(!feof(fp))
     {
             // printf("oioi");
-            struct node_t* temp = NULL;
-            temp = (struct node_t*)malloc(sizeof(struct node_t));
+            struct node_t* temp = malloc(sizeof(struct node_t));
             
+            // fread returns number of bytes from the IO stream
             b = fread(buffer, 1, 240, fp);
+            // printf("%s %d", buffer, b);
             memcpy(temp->data, buffer, 240);
             temp->p_size = b;
             temp->sq_no = count_seq;
+            temp->next = NULL;
 
-            if(count_seq == 0)
+            if(head == NULL)
             {
                 head = temp;
             }
@@ -240,15 +213,10 @@ void gbn_client(char* host, long port, FILE* fp) {
                 {
                     tp = tp->next;
                 }
-                // printf("%s \t",tp->data);
-                // printf("%d \t",tp->sq_no);
                 tp->next = temp;
-                // tp->next->next = NULL;
             }
             count_seq++;
     }
-        // end of all node
-        head->next = NULL;
 
     if(fp == NULL){ printf("\n Error in File Reading\n"); exit(0); }
 
@@ -265,45 +233,71 @@ void gbn_client(char* host, long port, FILE* fp) {
         }
 
         // traversing the ring buffer - linked list
-        struct node_t* some;
-        while(some->next != NULL)
+        int jabtak = 0;
+
+        while(jabtak < window_size)
         {
-            some = some->next;
+            // printf("ala motha shana");
+            struct node_t* some = searching_the_element(head, jabtak);
+
+            frame_send.sq_no = some->sq_no;
+
+            frame_send.p_size = some->p_size;
+            // char buff[240] = some->data;
+            memcpy(frame_send.packet.data, some->data, 240);
+
+            // printf("MSG - %s %d %d \n", frame_send.packet.data, frame_send.p_size, frame_send.sq_no);
+
+            int x = sendto(sockfd, &frame_send, sizeof(frame_send), 0, (const struct sockaddr *) &servaddr, sizeof(servaddr));
+            if(x == -1){ perror("Error in File Transfer");}
+
+            jabtak++;
         }
 
-        frame_send.sq_no;
-        frame_send.p_size;
-        frame_send.packet.data;
-
-        // fread returns number of bytes from the IO stream
-
-        memcpy(frame_send.packet.data, buffer, 240);
-        frame_send.p_size = b;
-        printf("MSG - %s %d \n", frame_send.packet.data, b);
-
-        resend: x = sendto(sockfd, &frame_send, sizeof(frame_send), 0, (const struct sockaddr *) &servaddr, sizeof(servaddr));
-        if(x == -1){ perror("Error in File Transfer");}
-        
         socklen_t len = sizeof(servaddr);
         f_recv_size = recvfrom(sockfd, &frame_recv, sizeof(frame_recv), 0 ,(struct sockaddr*)&servaddr, &len);
 
-        if( f_recv_size > 0 && frame_recv.sq_no == 0 && frame_recv.ack == sequence_no+1)
+        struct node_t* tasa;
+        
+        tasa = head;
+        if(tasa->next == NULL)
         {
-            printf("Acknowledge Receieved for Packet [%d] \n", k);
-		    memset(buffer, 0, sizeof(buffer));
-            ack_recv = 1;
+            printf("Acknowledge Receieved for Packet [%d] \n", sequence_no);
+            break;
+        }
+
+        if( f_recv_size > 0 && frame_recv.sq_no == 0 && frame_recv.ack == sequence_no)
+        {
+            printf("Acknowledge Receieved for Packet [%d] \n", sequence_no);
+
+            struct node_t* kasa;
+            kasa = head;
+            head = head->next;
+
+            // // release the memory for that first element
+            free(kasa);
+            
+            sequence_no++;
+            if(window_size < 128)
+            {
+                // printf("window++++++ %d", window_size);
+                window_size++;
+            }
         }
         else if(f_recv_size == -1)
         {
-            printf("Acknowledge Not Receieved for Packet [%d] \n", k);
+            printf("Acknowledge Not Receieved for Packet \n");
             // printf("%s \n", buffer);
-            ack_recv = 0;
-            goto resend;
+            
+            // // window size cannot be less than 1
+            if(window_size > 4)
+            {
+                // printf("window----- %d", window_size);
+                window_size--;
+            }
         }
         k = k + 1;
     }//end of while(1)
-
-    memset(buffer, 0, sizeof(buffer));
     for(int i = 0; i < 7; i++)
 	{
     	sendto(sockfd, 0, 0, 0, (const struct sockaddr *) &servaddr, sizeof(servaddr));
