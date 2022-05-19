@@ -16,7 +16,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 
-// THIS PART IS USED FOR DATA PACKET
+// THIS PART IS USED FOR DATA PACKETS
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // creating a data packet
